@@ -29,6 +29,11 @@ defmodule ExScimPhoenix.Plug.RequireScopes do
                 "Missing required scope(s): #{Enum.join(required_scopes, ", ")}"
               )
               |> halt()
+
+            {:error, :invalid_client} ->
+              conn
+              |> ExScimPhoenix.ErrorResponse.send_scim_error_from_status(401)
+              |> halt()
           end
         else
           conn
