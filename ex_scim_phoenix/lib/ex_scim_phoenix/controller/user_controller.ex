@@ -73,8 +73,7 @@ defmodule ExScimPhoenix.Controller.UserController do
         send_scim_error(conn, :conflict, :uniqueness, "User already exists")
 
       {:error, errors} when is_list(errors) ->
-        scim_errors = convert_validation_errors_to_scim(errors)
-        send_validation_errors(conn, scim_errors)
+        send_validation_errors(conn, errors)
 
       {:error, reason} ->
         Logger.error("Error creating user: #{inspect(reason)}")
@@ -99,8 +98,7 @@ defmodule ExScimPhoenix.Controller.UserController do
         send_scim_error(conn, :conflict, :uniqueness, "User data conflicts with existing user")
 
       {:error, errors} when is_list(errors) ->
-        scim_errors = convert_validation_errors_to_scim(errors)
-        send_validation_errors(conn, scim_errors)
+        send_validation_errors(conn, errors)
 
       {:error, reason} ->
         Logger.error("Error updating user #{id}: #{inspect(reason)}")
@@ -141,8 +139,7 @@ defmodule ExScimPhoenix.Controller.UserController do
         )
 
       {:error, errors} when is_list(errors) ->
-        scim_errors = convert_validation_errors_to_scim(errors)
-        send_validation_errors(conn, scim_errors)
+        send_validation_errors(conn, errors)
 
       {:error, reason} ->
         Logger.error("Error patching user #{id}: #{inspect(reason)}")
@@ -278,15 +275,5 @@ defmodule ExScimPhoenix.Controller.UserController do
       "descending" -> {:ok, :descending}
       _ -> {:error, "#{key} must be 'ascending' or 'descending'"}
     end
-  end
-
-  defp convert_validation_errors_to_scim(errors) when is_list(errors) do
-    errors
-    |> Enum.map(fn
-      {field, message} -> %{"path" => to_string(field), "message" => to_string(message)}
-      %{"path" => _, "message" => _} = error -> error
-      message when is_binary(message) -> %{"path" => "unknown", "message" => message}
-      error -> %{"path" => "unknown", "message" => inspect(error)}
-    end)
   end
 end

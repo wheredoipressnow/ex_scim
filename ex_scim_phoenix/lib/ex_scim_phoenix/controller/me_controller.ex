@@ -15,7 +15,7 @@ defmodule ExScimPhoenix.Controller.MeController do
 
   plug(
     ExScimPhoenix.Plug.RequireScopes,
-    [scopes: "scim:me:update"] when action in [:update, :patch]
+    [scopes: ["scim:me:update"]] when action in [:update, :patch]
   )
 
   plug(ExScimPhoenix.Plug.RequireScopes, [scopes: "scim:me:delete"] when action in [:delete])
