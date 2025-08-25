@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Multi-Project Elixir CI
+name: ExScim Multi-Project
 
 on:
   push:
@@ -54,5 +54,6 @@ jobs:
     - name: Run tests
       working-directory: ${{ matrix.project }}
       run: mix test
+
 
 
