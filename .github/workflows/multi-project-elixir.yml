@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: ExScim Multi-Project CI
+name: ExScim Multi-Project Elixir CI
 
 on:
   push:
@@ -17,9 +17,10 @@ permissions:
 jobs:
   test:
     name: Test ${{ matrix.project }}
-    runs-on: ubuntu22
+    runs-on: ubuntu-latest
     
     strategy:
+      fail-fast: false
       matrix:
         project:
           - ex_scim
@@ -28,33 +29,34 @@ jobs:
           - examples/provider
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
     
-    - name: Set up Elixir
-      uses: erlef/setup-beam@61e01a43a562a89bfc54c7f9a378ff67b03e4a21 # v1.16.0
-      with:
-        elixir-version: '1.18.2' # [Required] Define the Elixir version
-        otp-version: '27.0'      # [Required] Define the Erlang/OTP version
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.2' # [Required] Define the Elixir version
+          otp-version: '27.0'      # [Required] Define the Erlang/OTP version
     
-    - name: Restore dependencies cache
-      uses: actions/cache@v3
-      with:
-        path: ${{ matrix.project }}/deps
-        key: ${{ runner.os }}-mix-${{ matrix.project }}-${{ hashFiles(format('{0}/mix.lock', matrix.project)) }}
-        restore-keys: ${{ runner.os }}-mix-${{ matrix.project }}-
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ matrix.project }}/deps
+            ${{ matrix.project }}/_build
+          key: ${{ runner.os }}-mix-${{ matrix.project }}-${{ hashFiles(format('{0}/mix.lock', matrix.project)) }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.project }}-
     
-    - name: Install dependencies
-      working-directory: ${{ matrix.project }}
-      run: mix deps.get
+      - name: Install dependencies
+        working-directory: ${{ matrix.project }}
+        run: mix deps.get
     
-    - name: Compile project
-      working-directory: ${{ matrix.project }}
-      run: mix compile --warnings-as-errors
+      - name: Compile project
+        working-directory: ${{ matrix.project }}
+        run: MIX_ENV=test mix compile --warnings-as-errors
     
-    - name: Run tests
-      working-directory: ${{ matrix.project }}
-      run: mix test
-
-
+      - name: Run tests
+        working-directory: ${{ matrix.project }}
+        run: mix test
 
 
