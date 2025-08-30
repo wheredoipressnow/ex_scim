@@ -1,19 +1,85 @@
 defmodule ExScimClient.Filter do
   @moduledoc """
-  DSL for building SCIM filter strings.
+  DSL for building filter expressions.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("userName", "jdoe")
+      iex> ExScimClient.Filter.build(filter)
+      "userName eq jdoe"
+
+      iex> filter1 = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("active", "true")
+      iex> filter2 = ExScimClient.Filter.new() |> ExScimClient.Filter.starts_with("userName", "j")
+      iex> combined = ExScimClient.Filter.and1(filter1, filter2)
+      iex> ExScimClient.Filter.build(combined)
+      "(active eq true) and (userName sw j)"
+
   """
 
   defstruct [:expr]
 
+  @doc """
+  Creates a new empty filter.
+
+  ## Examples
+
+      iex> %ExScimClient.Filter{expr: nil} = ExScimClient.Filter.new()
+
+  """
+  @spec new() :: %__MODULE__{}
   def new, do: %__MODULE__{expr: nil}
 
+  @doc """
+  Builds the filter string from the filter struct.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("active", "true")
+      iex> ExScimClient.Filter.build(filter)
+      "active eq true"
+
+  """
+  @spec build(%__MODULE__{}) :: String.t()
   def build(%__MODULE__{expr: expression}), do: render(expression)
 
   # Comparison operator
 
+  @doc """
+  Adds an equals comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("active", "true")
+      iex> ExScimClient.Filter.build(filter)
+      "active eq true"
+
+  """
+  @spec equals(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def equals(filter, attribute, value), do: put_expression(filter, {:eq, attribute, value})
   def not_equal(filter, attribute, value), do: put_expression(filter, {:ne, attribute, value})
+  @doc """
+  Adds a contains comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.contains("emails.value", "example")
+      iex> ExScimClient.Filter.build(filter)
+      "emails.value co example"
+
+  """
+  @spec contains(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def contains(filter, attribute, value), do: put_expression(filter, {:co, attribute, value})
+  @doc """
+  Adds a starts-with comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.starts_with("userName", "admin")
+      iex> ExScimClient.Filter.build(filter)
+      "userName sw admin"
+
+  """
+  @spec starts_with(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def starts_with(filter, attribute, value), do: put_expression(filter, {:sw, attribute, value})
   def ends_with(filter, attribute, value), do: put_expression(filter, {:ew, attribute, value})
   def greater_than(filter, attribute, value), do: put_expression(filter, {:gt, attribute, value})
@@ -27,8 +93,34 @@ defmodule ExScimClient.Filter do
 
   # Logical operator
 
+  @doc """
+  Combines two filters with an AND operator.
+
+  ## Examples
+
+      iex> filter1 = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("active", "true")
+      iex> filter2 = ExScimClient.Filter.new() |> ExScimClient.Filter.starts_with("userName", "admin")
+      iex> combined = ExScimClient.Filter.and1(filter1, filter2)
+      iex> ExScimClient.Filter.build(combined)
+      "(active eq true) and (userName sw admin)"
+
+  """
+  @spec and1(%__MODULE__{}, %__MODULE__{}) :: %__MODULE__{}
   def and1(filter1, filter2), do: combine_expressions(:and, filter1, filter2)
   def not1(filter1, filter2), do: combine_expressions(:not, filter1, filter2)
+  @doc """
+  Combines two filters with an OR operator.
+
+  ## Examples
+
+      iex> filter1 = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("userType", "Employee")
+      iex> filter2 = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("userType", "Contractor")
+      iex> combined = ExScimClient.Filter.or1(filter1, filter2)
+      iex> ExScimClient.Filter.build(combined)
+      "(userType eq Employee) or (userType eq Contractor)"
+
+  """
+  @spec or1(%__MODULE__{}, %__MODULE__{}) :: %__MODULE__{}
   def or1(filter1, filter2), do: combine_expressions(:or, filter1, filter2)
 
   # AST

@@ -1,7 +1,15 @@
 defmodule ExScimClient.Request do
   @moduledoc """
-  Low-level SCIM request builder DSL.
-  Composes the requests that later executed by Req.
+  Request builder DSL for composing HTTP requests.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> {:ok, _response} = ExScimClient.Request.new(client)
+      ...> |> ExScimClient.Request.path("/Users")
+      ...> |> ExScimClient.Request.method(:get)
+      ...> |> ExScimClient.Request.run()
+
   """
   alias Req
   alias ExScimClient.Client
@@ -11,6 +19,18 @@ defmodule ExScimClient.Request do
 
   @type t :: keyword()
 
+  @doc """
+  Creates a new request from a client configuration.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> request = ExScimClient.Request.new(client)
+      iex> is_list(request)
+      true
+
+  """
+  @spec new(Client.t()) :: t()
   def new(%Client{base_url: base, bearer: bearer, default_headers: dh}) do
     [
       base_url: base,
@@ -29,6 +49,18 @@ defmodule ExScimClient.Request do
     Keyword.put(req, :headers, [{"authorization", "Basic #{credentials}"} | headers])
   end
 
+  @doc """
+  Sets the path for the request.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.path("/Users")
+      iex> Keyword.get(request, :url)
+      "https://example.com/scim/v2/Users"
+
+  """
+  @spec path(t(), String.t()) :: t()
   def path(req, endpoint) do
     base_url = Keyword.get(req, :base_url)
 
@@ -173,6 +205,19 @@ defmodule ExScimClient.Request do
     |> URI.to_string()
   end
 
+  @doc """
+  Executes the built request.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> {:ok, _response} = ExScimClient.Request.new(client)
+      ...> |> ExScimClient.Request.path("/Users")
+      ...> |> ExScimClient.Request.method(:get)
+      ...> |> ExScimClient.Request.run()
+
+  """
+  @spec run(t()) :: {:ok, map()} | {:error, term()}
   def run(req) do
     req
     |> build_query_parameters()
@@ -180,11 +225,15 @@ defmodule ExScimClient.Request do
   end
 
   defp do_run(req) do
-    with request <- Req.new(req),
-         {:ok, response} <- Req.request(request) do
-      {:ok, response.body}
-    else
-      {:error, reason} -> {:error, reason}
+    try do
+      with request <- Req.new(req),
+           {:ok, response} <- Req.request(request) do
+        {:ok, response.body}
+      else
+        {:error, reason} -> {:error, reason}
+        error -> {:error, error}
+      end
+    rescue
       error -> {:error, error}
     end
   end
