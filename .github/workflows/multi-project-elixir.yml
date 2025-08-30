@@ -26,6 +26,7 @@ jobs:
           - ex_scim
           - ex_scim_ecto
           - ex_scim_phoenix
+          - ex_scim_client
           - examples/provider
 
     steps:

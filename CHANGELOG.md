@@ -33,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Request logging
 - Error handling improvements
 
+### ex_scim_client
+#### Added
+- HTTP client for consuming SCIM APIs
+- User and Group resource operations
+- Request builder with authentication
+
 ### examples/provider
 #### Added
 - LiveView-based provider example
