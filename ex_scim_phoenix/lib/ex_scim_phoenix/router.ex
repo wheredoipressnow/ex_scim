@@ -1,4 +1,46 @@
 defmodule ExScimPhoenix.Router do
+  @moduledoc """
+  Router macro for adding SCIM 2.0 HTTP endpoints to Phoenix applications.
+  
+  Provides a complete set of SCIM 2.0 compliant routes including Users, Groups,
+  search, bulk operations, and discovery endpoints.
+  
+  ## Usage
+  
+      defmodule MyAppWeb.Router do
+        use Phoenix.Router
+        use ExScimPhoenix.Router
+        
+        scope "/scim/v2" do
+          pipe_through [:api, :scim_auth]
+          scim_routes()
+        end
+      end
+  
+  ## Custom Controllers
+  
+  Override default controllers by passing options:
+  
+      use ExScimPhoenix.Router,
+        user_controller: MyApp.CustomUserController,
+        group_controller: MyApp.CustomGroupController
+  
+  ## Available Routes
+  
+  - `GET /Users` - List users
+  - `POST /Users` - Create user  
+  - `GET /Users/:id` - Get user
+  - `PUT /Users/:id` - Replace user
+  - `PATCH /Users/:id` - Update user
+  - `DELETE /Users/:id` - Delete user
+  - Similar routes for `/Groups` and `/Me`
+  - `GET /ServiceProviderConfig` - Server capabilities
+  - `GET /ResourceTypes` - Available resource types
+  - `GET /Schemas` - Resource schemas
+  - `POST /.search` - Cross-resource search
+  - `POST /Bulk` - Bulk operations
+  """
+  
   defmacro __using__(opts) do
     user_controller =
       Keyword.get(opts, :user_controller, ExScimPhoenix.Controller.UserController)
