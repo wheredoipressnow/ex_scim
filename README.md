@@ -20,6 +20,7 @@ Add the dependencies you need to `mix.exs`:
 {:ex_scim, path: "ex_scim"}
 {:ex_scim_ecto, path: "ex_scim_ecto"}       # optional: Ecto storage
 {:ex_scim_phoenix, path: "ex_scim_phoenix"} # optional: Phoenix endpoints
+{:ex_scim_client, path: "ex_scim_client"}   # optional: HTTP client
 ````
 
 Run the example provider app to see a working SCIM setup:
@@ -36,12 +37,13 @@ Endpoints will be available under `/scim/v2`.
 
 ## Architecture Overview
 
-ExScim is split into three packages:
+ExScim is split into four packages:
 
 ```
 ex_scim/          # Core SCIM logic and operations
 ex_scim_ecto/     # Database persistence via Ecto
 ex_scim_phoenix/  # HTTP endpoints and Phoenix integration
+ex_scim_client/   # HTTP client for consuming SCIM APIs
 ```
 
 ### Core Design
@@ -92,6 +94,14 @@ ex_scim_phoenix/  # HTTP endpoints and Phoenix integration
 * Complete SCIM 2.0 router ([RFC 7644 §3](https://www.rfc-editor.org/rfc/rfc7644#section-3))
 * Plugs for auth, content-type handling, logging
 * HTTP error ↔ SCIM error mapping
+
+### ex\_scim\_client – HTTP Client
+
+* HTTP client for consuming SCIM APIs
+* User and Group resource operations
+* Filtering, sorting, pagination support
+* Bulk operations and schema discovery
+* Request builder with authentication
 
 ---
 
@@ -219,6 +229,7 @@ Each package can be tested independently:
 cd ex_scim && mix test
 cd ex_scim_ecto && mix test
 cd ex_scim_phoenix && mix test
+cd ex_scim_client && mix test
 ```
 
 Provider example:
