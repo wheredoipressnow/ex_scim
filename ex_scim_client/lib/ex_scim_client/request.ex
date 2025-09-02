@@ -38,11 +38,37 @@ defmodule ExScimClient.Request do
     ]
   end
 
+  @doc """
+  Sets bearer token authentication for the request.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.bearer("new_token")
+      iex> headers = Keyword.get(request, :headers)
+      iex> Enum.any?(headers, fn {key, value} -> key == "authorization" and String.starts_with?(value, "Bearer new_token") end)
+      true
+
+  """
+  @spec bearer(t(), String.t()) :: t()
   def bearer(req, token) do
     headers = Keyword.get(req, :headers, [])
     Keyword.put(req, :headers, [{"authorization", "Bearer #{token}"} | headers])
   end
 
+  @doc """
+  Sets basic authentication for the request.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.basic("user", "pass")
+      iex> headers = Keyword.get(request, :headers)
+      iex> Enum.any?(headers, fn {key, value} -> key == "authorization" and String.starts_with?(value, "Basic ") end)
+      true
+
+  """
+  @spec basic(t(), String.t(), String.t()) :: t()
   def basic(req, username, password) do
     credentials = Base.encode64("#{username}:#{password}")
     headers = Keyword.get(req, :headers, [])
@@ -76,14 +102,61 @@ defmodule ExScimClient.Request do
     Keyword.put(req, :url, full_url)
   end
 
+  @doc """
+  Sets the HTTP method for the request.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.method(:post)
+      iex> Keyword.get(request, :method)
+      :post
+
+  """
+  @spec method(t(), atom()) :: t()
   def method(req, verb) do
     Keyword.put(req, :method, verb)
   end
 
+  @doc """
+  Sets the JSON body for the request.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> user_data = %{"userName" => "jdoe", "active" => true}
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.body(user_data)
+      iex> Keyword.get(request, :json)
+      %{"userName" => "jdoe", "active" => true}
+
+  """
+  @spec body(t(), map()) :: t()
   def body(req, json) do
     Keyword.put(req, :json, json)
   end
 
+  @doc """
+  Adds a filter to the request.
+
+  Accepts either a Filter struct or a filter string.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> filter_struct = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("active", "true")
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.filter(filter_struct)
+      iex> scim_params = Keyword.get(request, :scim_params, %{})
+      iex> Map.get(scim_params, :filter)
+      "active eq true"
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.filter("userName eq jdoe")
+      iex> scim_params = Keyword.get(request, :scim_params, %{})
+      iex> Map.get(scim_params, :filter)
+      "userName eq jdoe"
+
+  """
+  @spec filter(t(), Filter.t() | String.t()) :: t()
   def filter(req, %Filter{} = filter_struct) do
     filter(req, Filter.build(filter_struct))
   end
@@ -96,6 +169,20 @@ defmodule ExScimClient.Request do
 
   def filter(req, _), do: req
 
+  @doc """
+  Adds sorting parameters to the request.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> sorting = ExScimClient.Sorting.new("userName", :desc)
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.sort_by(sorting)
+      iex> scim_params = Keyword.get(request, :scim_params, %{})
+      iex> {Map.get(scim_params, :sort_by), Map.get(scim_params, :sort_order)}
+      {"userName", :desc}
+
+  """
+  @spec sort_by(t(), Sorting.t()) :: t()
   def sort_by(req, %Sorting{} = sorting_struct) do
     updated_params =
       req
@@ -107,6 +194,20 @@ defmodule ExScimClient.Request do
 
   def sort_by(req, _), do: req
 
+  @doc """
+  Adds pagination parameters to the request.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> pagination = ExScimClient.Pagination.new(1, 50)
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.paginate(pagination)
+      iex> scim_params = Keyword.get(request, :scim_params, %{})
+      iex> {Map.get(scim_params, :start_index), Map.get(scim_params, :count)}
+      {1, 50}
+
+  """
+  @spec paginate(t(), Pagination.t()) :: t()
   def paginate(req, %Pagination{} = pagination_struct) do
     updated_params =
       req
@@ -118,6 +219,19 @@ defmodule ExScimClient.Request do
 
   def paginate(req, _), do: req
 
+  @doc """
+  Sets attributes to include in the response.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.attributes(["userName", "emails"])
+      iex> scim_params = Keyword.get(request, :scim_params, %{})
+      iex> Map.get(scim_params, :attributes)
+      ["userName", "emails"]
+
+  """
+  @spec attributes(t(), list(String.t())) :: t()
   def attributes(req, attribute_list) when is_list(attribute_list) do
     scim_params = Keyword.get(req, :scim_params, %{})
     updated_params = Map.put(scim_params, :attributes, attribute_list)
@@ -126,6 +240,19 @@ defmodule ExScimClient.Request do
 
   def attributes(req, _), do: req
 
+  @doc """
+  Sets attributes to exclude from the response.
+
+  ## Examples
+
+      iex> client = ExScimClient.Client.new("https://example.com/scim/v2", "token")
+      iex> request = ExScimClient.Request.new(client) |> ExScimClient.Request.excluded_attributes(["meta", "groups"])
+      iex> scim_params = Keyword.get(request, :scim_params, %{})
+      iex> Map.get(scim_params, :excluded_attributes)
+      ["meta", "groups"]
+
+  """
+  @spec excluded_attributes(t(), list(String.t())) :: t()
   def excluded_attributes(req, attribute_list)
       when is_list(attribute_list) do
     scim_params = Keyword.get(req, :scim_params, %{})

@@ -56,6 +56,18 @@ defmodule ExScimClient.Filter do
   """
   @spec equals(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def equals(filter, attribute, value), do: put_expression(filter, {:eq, attribute, value})
+
+  @doc """
+  Adds a not-equal comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.not_equal("active", "false")
+      iex> ExScimClient.Filter.build(filter)
+      "active ne false"
+
+  """
+  @spec not_equal(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def not_equal(filter, attribute, value), do: put_expression(filter, {:ne, attribute, value})
   @doc """
   Adds a contains comparison to the filter.
@@ -81,14 +93,84 @@ defmodule ExScimClient.Filter do
   """
   @spec starts_with(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def starts_with(filter, attribute, value), do: put_expression(filter, {:sw, attribute, value})
+
+  @doc """
+  Adds an ends-with comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.ends_with("emails.value", "example.com")
+      iex> ExScimClient.Filter.build(filter)
+      "emails.value ew example.com"
+
+  """
+  @spec ends_with(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def ends_with(filter, attribute, value), do: put_expression(filter, {:ew, attribute, value})
+
+  @doc """
+  Adds a greater-than comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.greater_than("meta.lastModified", "2023-01-01T00:00:00Z")
+      iex> ExScimClient.Filter.build(filter)
+      "meta.lastModified gt 2023-01-01T00:00:00Z"
+
+  """
+  @spec greater_than(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def greater_than(filter, attribute, value), do: put_expression(filter, {:gt, attribute, value})
 
+  @doc """
+  Adds a greater-than-or-equal comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.greater_or_equal("meta.version", "2")
+      iex> ExScimClient.Filter.build(filter)
+      "meta.version ge 2"
+
+  """
+  @spec greater_or_equal(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def greater_or_equal(filter, attribute, value),
     do: put_expression(filter, {:ge, attribute, value})
 
+  @doc """
+  Adds a less-than comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.less_than("meta.version", "5")
+      iex> ExScimClient.Filter.build(filter)
+      "meta.version lt 5"
+
+  """
+  @spec less_than(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def less_than(filter, attribute, value), do: put_expression(filter, {:lt, attribute, value})
+
+  @doc """
+  Adds a less-than-or-equal comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.less_or_equal("meta.version", "10")
+      iex> ExScimClient.Filter.build(filter)
+      "meta.version le 10"
+
+  """
+  @spec less_or_equal(%__MODULE__{}, String.t(), String.t()) :: %__MODULE__{}
   def less_or_equal(filter, attribute, value), do: put_expression(filter, {:le, attribute, value})
+
+  @doc """
+  Adds a present comparison to the filter.
+
+  ## Examples
+
+      iex> filter = ExScimClient.Filter.new() |> ExScimClient.Filter.present("emails", nil)
+      iex> ExScimClient.Filter.build(filter)
+      "emails pr"
+
+  """
+  @spec present(%__MODULE__{}, String.t(), any()) :: %__MODULE__{}
   def present(filter, attribute, _value), do: put_expression(filter, {:pr, attribute, nil})
 
   # Logical operator
@@ -107,6 +189,20 @@ defmodule ExScimClient.Filter do
   """
   @spec and1(%__MODULE__{}, %__MODULE__{}) :: %__MODULE__{}
   def and1(filter1, filter2), do: combine_expressions(:and, filter1, filter2)
+
+  @doc """
+  Combines two filters with a NOT operator.
+
+  ## Examples
+
+      iex> filter1 = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("active", "true")
+      iex> filter2 = ExScimClient.Filter.new() |> ExScimClient.Filter.equals("userType", "Employee")
+      iex> combined = ExScimClient.Filter.not1(filter1, filter2)
+      iex> ExScimClient.Filter.build(combined)
+      "(active eq true) not (userType eq Employee)"
+
+  """
+  @spec not1(%__MODULE__{}, %__MODULE__{}) :: %__MODULE__{}
   def not1(filter1, filter2), do: combine_expressions(:not, filter1, filter2)
   @doc """
   Combines two filters with an OR operator.

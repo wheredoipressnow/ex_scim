@@ -12,6 +12,12 @@ defmodule ExScimClient.Client do
 
   """
 
+  @type t :: %__MODULE__{
+          base_url: String.t(),
+          bearer: String.t(),
+          default_headers: list({String.t(), String.t()})
+        }
+
   defstruct [
     :base_url,
     :bearer,
