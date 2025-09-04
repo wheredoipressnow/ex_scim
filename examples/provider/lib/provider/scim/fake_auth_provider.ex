@@ -7,7 +7,7 @@ defmodule Provider.Scim.FakeAuthProvider do
       id: "scim_client_1",
       type: :client,
       scopes: ["scim:read", "scim:write"],
-      expires_at: ~U[2025-12-31 23:59:59Z],
+      expires_at: DateTime.utc_now() |> DateTime.add(1, :day),
       active: true
     },
     "valid_user_token" => %{
@@ -21,14 +21,14 @@ defmodule Provider.Scim.FakeAuthProvider do
         "scim:read",
         "scim:write"
       ],
-      expires_at: ~U[2025-12-31 23:59:59Z],
+      expires_at: DateTime.utc_now() |> DateTime.add(1, :day),
       active: true
     },
     "expired_token_456" => %{
       id: "scim_client_2",
       type: :client,
       scopes: ["scim:read"],
-      expires_at: ~U[2024-01-01 00:00:00Z],
+      expires_at: DateTime.utc_now() |> DateTime.add(1, :day),
       active: false
     }
   }
