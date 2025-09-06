@@ -357,7 +357,7 @@ defmodule ExScimClient.Request do
            {:ok, response} <- Req.request(request) do
         {:ok, response.body}
       else
-        {:error, reason} -> {:error, reason}
+        {:error, %Req.TransportError{reason: reason}} -> {:error, reason}
         error -> {:error, error}
       end
     rescue
