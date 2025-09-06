@@ -18,6 +18,10 @@ defmodule ExScimClient.Filter do
 
   defstruct [:expr]
 
+  @type t :: %__MODULE__{
+          expr: term() | nil
+        }
+
   @doc """
   Creates a new empty filter.
 
