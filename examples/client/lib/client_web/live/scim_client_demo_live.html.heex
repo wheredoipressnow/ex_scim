@@ -1,0 +1,354 @@
+<div class="min-h-screen bg-base-200">
+  <!-- Header -->
+  <.header>
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <span class="text-primary-content font-bold text-sm">S</span>
+      </div>
+      <h1 class="text-2xl font-bold text-base-content">
+        SCIM Client Demo
+      </h1>
+    </div>
+    <:actions>
+      <ClientWeb.Layouts.theme_toggle />
+    </:actions>
+  </.header>
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Test Status Section -->
+    <div class="card bg-base-100 shadow-xl border border-base-300 mb-8">
+      <div class="card-body">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div class="flex flex-col">
+              <h2 class="text-xl font-bold">Test Status</h2>
+              <div class="flex items-center space-x-2 mt-1">
+                <%= if @running do %>
+                  <span class="loading loading-spinner loading-sm text-primary"></span>
+                  <span class="text-primary font-medium">Running Tests</span>
+                <% else %>
+                  <%= if @client do %>
+                    <div class="w-3 h-3 bg-success rounded-full"></div>
+                    <span class="text-success font-medium">Ready to Run</span>
+                  <% else %>
+                    <div class="w-3 h-3 bg-warning rounded-full"></div>
+                    <span class="text-warning font-medium">Configuration Required</span>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+
+            <%= if @progress > 0 do %>
+              <div class="text-right">
+                <div class="text-2xl font-bold text-success">{@progress}%</div>
+                <div class="text-sm opacity-70">Complete</div>
+              </div>
+            <% end %>
+          </div>
+          
+<!-- Prominent Start Button -->
+          <div class="flex-none">
+            <%= if @running do %>
+              <.button
+                phx-click="stop_tests"
+                class="text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-lg px-6 py-3 text-center transition-all cursor-pointer dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-500 dark:focus:ring-red-800"
+              >
+                <.icon name="hero-stop" class="size-5 mr-2" /> Stop Tests
+              </.button>
+            <% else %>
+              <.button
+                phx-click="start_tests"
+                disabled={is_nil(@client)}
+                class={
+                  if(@client,
+                    do:
+                      "text-blue-700 hover:text-white border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-lg px-6 py-3 text-center transition-all cursor-pointer dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:hover:bg-blue-500 dark:focus:ring-blue-800",
+                    else:
+                      "text-gray-400 border border-gray-400 font-medium rounded-lg text-lg px-6 py-3 text-center cursor-not-allowed dark:text-gray-600 dark:border-gray-600"
+                  )
+                }
+              >
+                <.icon name="hero-play" class="size-5 mr-2" /> Start Tests
+              </.button>
+            <% end %>
+          </div>
+        </div>
+
+        <%= if @progress > 0 and @progress < 100 do %>
+          <progress class="progress progress-primary w-full mt-4" value={@progress} max="100">
+          </progress>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      
+<!-- Configuration Panel -->
+      <div class="lg:col-span-1">
+        <div class="card bg-base-100 shadow-xl border border-base-300">
+          <div class="card-body">
+            <h2 class="card-title mb-4">
+              <span class="w-5 h-5 mr-2">⚙️</span> Configuration
+            </h2>
+
+            <form
+              phx-change="update_config"
+              class="space-y-4"
+              autocomplete="off"
+              phx-hook="ConfigPersistence"
+              id="config-form"
+            >
+              <.input
+                type="url"
+                name="base_url"
+                id="base_url"
+                value={@base_url}
+                label="Base URL"
+                placeholder="https://api.example.com/scim/v2"
+                disabled={@running}
+                autocomplete="on"
+              />
+
+              <.input
+                type="text"
+                name="bearer_token"
+                id="bearer_token"
+                value={@bearer_token}
+                label="Bearer Token"
+                placeholder="Enter your bearer token"
+                disabled={@running}
+                autocomplete="on"
+              />
+            </form>
+          </div>
+        </div>
+        
+<!-- Test Summary -->
+        <div class="mt-6 card bg-base-100 shadow-xl border border-base-300">
+          <div class="card-body">
+            <h3 class="card-title">Test Summary</h3>
+
+            <.list>
+              <:item title="Total Tests">
+                {length(test_definitions())}
+              </:item>
+              <:item title="Passed">
+                <span class="text-success font-semibold">
+                  {@test_results |> Enum.count(fn {_, result} -> result.status == :success end)}
+                </span>
+              </:item>
+              <:item title="Failed">
+                <span class="text-error font-semibold">
+                  {@test_results |> Enum.count(fn {_, result} -> result.status == :error end)}
+                </span>
+              </:item>
+              <:item title="Running">
+                <span class="text-primary font-semibold">
+                  {@test_results |> Enum.count(fn {_, result} -> result.status == :running end)}
+                </span>
+              </:item>
+            </.list>
+            
+<!-- Progress Bar -->
+            <div class="mt-4">
+              <div class="flex justify-between text-sm mb-2">
+                <span>Progress</span>
+                <span>{@progress}%</span>
+              </div>
+              <progress class="progress progress-primary w-full" value={@progress} max="100">
+              </progress>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+<!-- Main Content -->
+      <div class="lg:col-span-3">
+        <!-- Test Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <%= for test_def <- test_definitions() do %>
+            <% test_result =
+              Map.get(@test_results, test_def.id, %{status: :pending, result: nil, error: nil}) %>
+
+            <div class={[
+              "card bg-base-100 shadow-xl transition-all duration-200 hover:shadow-2xl border border-base-300 border-l-4",
+              case test_result.status do
+                :pending -> "border-l-base-300"
+                :running -> "border-l-primary"
+                :success -> "border-l-success"
+                :error -> "border-l-error"
+              end
+            ]}>
+              <div class="card-body">
+                <!-- Test Header -->
+                <div class="flex items-start justify-between mb-4">
+                  <div class="flex items-center space-x-3">
+                    <div class={[
+                      "w-10 h-10 rounded-lg flex items-center justify-center text-lg",
+                      cond do
+                        test_result.status == :running -> "bg-primary/20"
+                        test_result.status == :success -> "bg-success/20"
+                        test_result.status == :error -> "bg-error/20"
+                        is_nil(@client) -> "bg-base-200 opacity-50"
+                        @running -> "bg-warning/20"
+                        true -> "bg-base-300"
+                      end
+                    ]}>
+                      {test_def.icon}
+                    </div>
+
+                    <div>
+                      <h3 class="card-title text-base">{test_def.name}</h3>
+                      <p class="text-sm opacity-70">{test_def.description}</p>
+                    </div>
+                  </div>
+                  
+<!-- Status Badge -->
+                  <div class={[
+                    "badge",
+                    cond do
+                      test_result.status == :running -> "badge-primary"
+                      test_result.status == :success -> "badge-success"
+                      test_result.status == :error -> "badge-error"
+                      is_nil(@client) -> "badge-neutral opacity-50"
+                      @running -> "badge-warning"
+                      true -> "badge-neutral"
+                    end
+                  ]}>
+                    {cond do
+                      test_result.status == :running -> "Running"
+                      test_result.status == :success -> "Passed"
+                      test_result.status == :error -> "Failed"
+                      is_nil(@client) -> "Not Ready"
+                      @running -> "Waiting"
+                      true -> "Ready"
+                    end}
+                  </div>
+                </div>
+                
+<!-- Test Status -->
+                <%= case test_result.status do %>
+                  <% :running -> %>
+                    <div class="flex items-center space-x-2 text-primary">
+                      <span class="loading loading-spinner loading-xs"></span>
+                      <span class="text-sm font-medium">Executing...</span>
+                    </div>
+                  <% :success -> %>
+                    <div class="space-y-2">
+                      <div class="flex items-center space-x-2 text-success">
+                        <.icon name="hero-check-circle" class="size-4" />
+                        <span class="text-sm font-medium">Test passed</span>
+                      </div>
+
+                      <%= if test_result.result do %>
+                        <details class="collapse bg-base-200">
+                          <summary class="collapse-title text-xs cursor-pointer">
+                            View response data
+                          </summary>
+                          <div class="collapse-content">
+                            <pre class="text-xs whitespace-pre-wrap"><%= inspect(test_result.result, pretty: true, limit: :infinity) %></pre>
+                          </div>
+                        </details>
+                      <% end %>
+                    </div>
+                  <% :error -> %>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2 text-error">
+                          <.icon name="hero-x-circle" class="size-4" />
+                          <span class="text-sm font-medium">Test failed</span>
+                        </div>
+
+                        <%= if not @running do %>
+                          <.button
+                            phx-click="retry_test"
+                            phx-value-test_id={test_def.id}
+                            class="btn-error btn-xs"
+                          >
+                            Retry
+                          </.button>
+                        <% end %>
+                      </div>
+
+                      <%= if test_result.error do %>
+                        <div class="alert alert-error">
+                          <p class="text-xs font-mono">
+                            {inspect(test_result.error)}
+                          </p>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% :pending -> %>
+                    <%= cond do %>
+                      <% is_nil(@client) -> %>
+                        <div class="flex items-center space-x-2 opacity-50">
+                          <.icon name="hero-exclamation-triangle" class="size-4" />
+                          <span class="text-sm">Configuration required</span>
+                        </div>
+                      <% @running -> %>
+                        <div class="flex items-center space-x-2 text-warning">
+                          <span class="loading loading-dots loading-xs"></span>
+                          <span class="text-sm">Waiting in queue</span>
+                        </div>
+                      <% true -> %>
+                        <div class="flex items-center space-x-2 opacity-70">
+                          <div class="w-4 h-4 border border-base-300 rounded-full"></div>
+                          <span class="text-sm">Ready to run</span>
+                        </div>
+                    <% end %>
+                <% end %>
+                
+<!-- Active Test Indicator -->
+                <%= if @current_test == test_def.id do %>
+                  <div class="mt-3 alert alert-info">
+                    <div class="flex items-center space-x-2">
+                      <div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                      <span class="text-xs font-medium">Currently executing</span>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        
+<!-- Live Logs -->
+        <div class="card bg-base-100 shadow-xl border border-base-300">
+          <div class="card-body">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="card-title">
+                <span class="w-5 h-5 mr-2">📄</span> Live Test Logs
+              </h3>
+
+              <%= if length(@logs) > 0 do %>
+                <div class="badge badge-neutral">
+                  {length(@logs)} entries
+                </div>
+              <% end %>
+            </div>
+
+            <%= if length(@logs) == 0 do %>
+              <div class="text-center py-8 opacity-50">
+                <.icon name="hero-document-text" class="size-12 mx-auto mb-4" />
+                <p class="text-sm">No logs yet. Start tests to see updates.</p>
+              </div>
+            <% else %>
+              <div class="space-y-2 max-h-96 overflow-y-auto">
+                <%= for log <- Enum.reverse(@logs) do %>
+                  <div class="flex items-start space-x-3 py-2 px-3 rounded-lg bg-base-200 hover:bg-base-300 transition-colors">
+                    <div class="text-xs opacity-70 font-mono mt-0.5 flex-shrink-0">
+                      {Calendar.strftime(log.timestamp, "%H:%M:%S")}
+                    </div>
+                    <div class="flex-1 text-sm font-mono">
+                      {log.message}
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
