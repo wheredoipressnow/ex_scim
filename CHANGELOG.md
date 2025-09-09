@@ -45,3 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User and group management interface
 - Database migrations and seeds
 - Authentication integration
+
+### examples/client
+#### Added
+- Client implementation example
+- SCIM API client usage demonstration
